@@ -62,7 +62,7 @@ repos:
 ```
 
 The structure for the configuration specified in `flake.nix` matches the
-[defined structure[2] of the `.pre-commit-config.yaml` file. A small
+[defined structure][2] of the `.pre-commit-config.yaml` file. A small
 bootstrapping script is supplied via a [shellHook][3] which links the generated
 config into the local directory and installs the hooks.
 
