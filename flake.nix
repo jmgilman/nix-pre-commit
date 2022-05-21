@@ -18,7 +18,7 @@
                   id = "nixpkgs-fmt";
                   entry = "${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt";
                   language = "system";
-                  files = "\.nix";
+                  files = "\\.nix";
                 }
               ];
             }
