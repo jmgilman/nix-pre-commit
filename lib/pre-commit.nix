@@ -22,7 +22,7 @@ let
       passAsFile = [ "json" ];
     }
     ''
-      jq 'del(.repos[].hooks[][] | nulls)' "$jsonPath" | jq 'del(.repos[][] | nulls)' | yq -P > $out
+      jq 'del(.repos[].hooks[][] | nulls)' "$jsonPath" | jq 'del(.repos[][] | nulls)' | jq 'del(.[][] | nulls)' | yq -P > $out
     '';
 
   # Provides a shell hook for linking the generated configuration and installing

@@ -125,7 +125,7 @@ in
     default_stages = mkOption {
       type = types.nullOr (types.listOf types.str);
       description = "The default stages to use for hooks";
-      default = [ "commit" ];
+      default = null;
     };
     repos = mkOption {
       type = types.listOf repo;
