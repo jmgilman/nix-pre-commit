@@ -11,6 +11,10 @@ let
     ];
   };
 
+  # Find all stages to install
+  stages = unique (flatten (builtins.map (repo: builtins.map (hook: hook.stages) repo.hooks) mod.config.repos) ++ [ "pre-commit" ]);
+  installStages = builtins.concatStringsSep " " (builtins.filter (stage: stage != null) stages);
+
   # Create a YAML variant of the generated configuration. Most default values
   # are null, so we use `jq` to strip the associated keys from the final
   # configuration. This keeps it small and prevents drift by enforcing default
@@ -47,7 +51,13 @@ let
       done
 
       # Install configured hooks
-      ${pre-commit}/bin/pre-commit install --install-hooks
+      for stage in ${installStages}; do
+        if [[ "$stage" == "manual" ]]; then
+          continue
+        fi
+
+        ${pre-commit}/bin/pre-commit install -t "$stage"
+      done
     else # this was an existing file
       echo 1>&2 "nix-pre-commit: ERROR refusing to overwrite existing .pre-commit-config.yaml"
     fi
