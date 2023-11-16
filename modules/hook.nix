@@ -1,13 +1,27 @@
-{ config, lib, pkgs, ... }:
+{ lib, ... }:
 let
   inherit (lib) mkOption types;
   hook = types.submodule (
-    { config, ... }:
-    {
+    { config, ... }: {
       options = {
+        package = mkOption {
+          type = types.nullOr types.package;
+          description = "The package providing the hook";
+          default = null;
+        };
         id = mkOption {
           type = types.str;
           description = "The id of the hook - used in pre-commit-config.yaml";
+          default =
+            let
+              pkg = config.package;
+            in
+            if pkg == null
+            then
+              if config.entry != null
+              then config.entry
+              else null
+            else pkg.meta.mainProgram or pkg.pname or pkg.name;
         };
         name = mkOption {
           type = types.str;
@@ -17,12 +31,15 @@ let
         entry = mkOption {
           type = types.nullOr types.str;
           description = "The entry point - the executable to run";
-          default = null;
+          default =
+            if config.package == null
+            then null
+            else "${config.package}/bin/${config.id}";
         };
         language = mkOption {
           type = types.nullOr types.str;
           description = "The language of the hook - tells pre-commit how to install the hook";
-          default = null;
+          default = "system";
         };
         files = mkOption {
           type = types.nullOr types.str;
@@ -98,27 +115,24 @@ let
     }
   );
 
-  repo = types.submodule (
-    { config, ... }:
-    {
-      options = {
-        repo = mkOption {
-          type = types.str;
-          description = "The address of the repository";
-        };
-        rev = mkOption {
-          type = types.nullOr types.str;
-          description = "The revision to fetch the hook at";
-          default = null;
-        };
-        hooks = mkOption {
-          type = types.listOf hook;
-          description = "The hooks to include in the configuration";
-          default = { };
-        };
+  repo = types.submodule {
+    options = {
+      repo = mkOption {
+        type = types.str;
+        description = "The address of the repository";
       };
-    }
-  );
+      rev = mkOption {
+        type = types.nullOr types.str;
+        description = "The revision to fetch the hook at";
+        default = null;
+      };
+      hooks = mkOption {
+        type = types.listOf hook;
+        description = "The hooks to include in the configuration";
+        default = { };
+      };
+    };
+  };
 in
 {
   options = {
