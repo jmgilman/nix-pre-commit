@@ -17,30 +17,15 @@ Add it as an input to your flake and define the pre-commit configuration:
   outputs = { self, nixpkgs, flake-utils, nix-pre-commit }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs { inherit system; };
-
-        config = {
-          repos = [
-            {
-              repo = "local";
-              hooks = [
-                {
-                  id = "nixpkgs-fmt";
-                  entry = "${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt";
-                  language = "system";
-                  files = "\\.nix";
-                }
-              ];
-            }
-          ];
-        };
+        pkgs = nixpkgs.legacyPackages.${system};
       in
       {
-        devShell = pkgs.mkShell {
-          shellHook = (nix-pre-commit.lib.${system}.mkConfig {
-            inherit pkgs config;
-          }).shellHook;
-        };
+        devShells.default = (nix-pre-commit.lib.${system}.mkLocalConfig [
+          {
+            package = pkgs.nixpkgs-fmt;
+            types = ["nix"];
+          }
+        ]) devShell;
       }
     );
 }
@@ -49,15 +34,14 @@ Add it as an input to your flake and define the pre-commit configuration:
 This produces a `.pre-commit-config.yaml` in the local directory:
 
 ```yaml
-default_stages:
-  - commit
 repos:
   - hooks:
       - entry: /nix/store/l9vwl9yvjmdj3pixlj5i9kc4524bh78r-nixpkgs-fmt-1.2.0/bin/nixpkgs-fmt
-        files: \.nix
         id: nixpkgs-fmt
         language: system
         name: nixpkgs-fmt
+        types:
+         - nix
     repo: local
 ```
 
@@ -65,6 +49,50 @@ The structure for the configuration specified in `flake.nix` matches the
 [defined structure][2] of the `.pre-commit-config.yaml` file. A small
 bootstrapping script is supplied via a [shellHook][3] which links the generated
 config into the local directory and installs the hooks.
+
+### Provided Functions
+
+#### lib.mkConfig
+
+  Make multi-repo configuration from `config` attrset as:
+
+  ```nix
+  lib.mkConfig {
+    repos = [
+      {
+        repo = "local";
+        hooks = [
+          {
+            package = pkgs.nixpkgs-fmt;
+          }
+          { ... }
+        ];
+      }
+      { ... }
+    ];
+  }
+  ```
+
+#### lib.mkLocalConfig
+
+  Make single-repo local configuration from `hooks` list as:
+
+  ```nix
+  lib.mkLocalConfig [
+    {
+      package = pkgs.nixpkgs-fmt;
+    }
+    { ... }
+  ]
+  ```
+
+#### Config Attrset
+
+This is the return value of `lib.mkConfig` and `lib.mkLocalConfig`:
+
+* `packages`: list of hook packages (includes pre-commit)
+* `shellHook`: the shell hook
+* `devShell`: convenience wrapper - `pkgs.mkShell` called with `packages` and `shellHook`
 
 ## Contributing
 
